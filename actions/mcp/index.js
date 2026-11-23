@@ -47,6 +47,34 @@ function buildServer (params, headers) {
       return asText(await tools.getTrace(cfg, a, tools.makeDeadline(tools.TOTAL_BUDGET_MS)), (a.detail || 'raw') === 'raw')
     } catch (e) { log('get_trace_error', e.message); return asError(e) }
   })
+  server.registerTool('get_manifest', {
+    description: 'Fetch the complete default-version Brand Concierge manifest by manifest_id, sandbox_id and Adobe org_id.',
+    inputSchema: {
+      manifest_id: z.string().min(1).max(200).regex(/^[A-Za-z0-9_-]+$/).describe('Manifest identifier'),
+      sandbox_id: z.string().uuid().describe('Sandbox ID for the x-sandbox-id header'),
+      org_id: z.string().max(200).regex(/^[A-Za-z0-9_-]+@AdobeOrg$/).describe('Adobe organization ID for the x-gw-ims-org-id header')
+    },
+    annotations: { readOnlyHint: true, openWorldHint: true }
+  }, async (args) => {
+    try {
+      log('get_manifest', args.manifest_id)
+      return asText(await tools.getManifest(cfg, args, tools.makeDeadline(tools.TOTAL_BUDGET_MS)), true)
+    } catch (e) { log('get_manifest_error', e.message); return asError(e) }
+  })
+  server.registerTool('update_manifest', {
+    description: 'Request compilation/update of a Brand Concierge manifest through the compile-request endpoint. May change server state; does not accept replacement manifest JSON.',
+    inputSchema: {
+      manifest_id: z.string().min(1).max(200).regex(/^[A-Za-z0-9_-]+$/).describe('Manifest identifier'),
+      sandbox_id: z.string().uuid().describe('Sandbox ID for the x-sandbox-id header'),
+      org_id: z.string().max(200).regex(/^[A-Za-z0-9_-]+@AdobeOrg$/).describe('Adobe organization ID for the x-gw-ims-org-id header')
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true }
+  }, async (args) => {
+    try {
+      log('update_manifest', args.manifest_id)
+      return asText(await tools.updateManifest(cfg, args, tools.makeDeadline(tools.TOTAL_BUDGET_MS)), true)
+    } catch (e) { log('update_manifest_error', e.message); return asError(e) }
+  })
   return server
 }
 

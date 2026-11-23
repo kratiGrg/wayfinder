@@ -6,6 +6,7 @@
 // - redirects are refused (re-validating each hop is not needed if there are none)
 // - hard timeout and response size cap
 async function readCapped (res, maxBytes) {
+  if (!res.body) return ''
   const reader = res.body.getReader()
   const chunks = []
   let total = 0

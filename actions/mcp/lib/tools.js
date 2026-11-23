@@ -1,5 +1,6 @@
 'use strict'
 const { makeClient } = require('./langsmith')
+const { makeClient: makeManifestClient } = require('./manifests')
 const { condenseTrace } = require('./trace')
 const { makeDeadline } = require('./http')
 
@@ -27,6 +28,7 @@ function buildConfig (p, inbound = {}) {
       workspaceId: p.LANGSMITH_WORKSPACE_ID,
       endpoint: p.LANGSMITH_ENDPOINT || 'https://api.smith.langchain.com'
     },
+    manifest: { bearerToken: p.MANIFEST_BEARER_TOKEN },
     rawPartChars: Math.min(400000, Math.max(20000, parseInt(p.RAW_PART_CHARS, 10) || DEFAULT_RAW_PART_CHARS))
   }
 }
@@ -36,11 +38,15 @@ const PUBLIC_ERRORS = {
   invalid_request_id: 'request_id must be a UUID.',
   invalid_project_id: 'LANGSMITH_PROJECT_ID is not a valid UUID.',
   langsmith_not_configured: 'LangSmith is not configured on the server (LANGSMITH_API_KEY missing).',
+  manifest_not_configured: 'Manifest service is not configured on the server (MANIFEST_BEARER_TOKEN missing).',
+  invalid_manifest_response: 'Manifest service returned invalid JSON.',
+  response_too_large: 'The upstream response exceeded the size limit.',
   timeout: 'An upstream call timed out.'
 }
 function publicError (e) {
   const code = e && e.message
   if (PUBLIC_ERRORS[code]) return PUBLIC_ERRORS[code]
+  if (/^manifest_http_\d+$/.test(code)) return 'Manifest service returned an error (' + code.replace('manifest_http_', 'HTTP ') + ').'
   if (/^langsmith_http_(401|403)$/.test(code)) return 'LangSmith rejected the API key or workspace (' + code.replace('langsmith_http_', 'HTTP ') + ').'
   if (code === 'langsmith_http_429') return 'LangSmith rate limit reached. Retry shortly.'
   if (/^langsmith_http_/.test(code)) return 'LangSmith returned an error (' + code.replace('langsmith_http_', 'HTTP ') + ')' + (e.detail ? ': ' + e.detail : '.')
@@ -88,4 +94,16 @@ async function getTrace (cfg, args, deadline) {
   return out
 }
 
-module.exports = { buildConfig, getTrace, publicError, makeDeadline, TOTAL_BUDGET_MS }
+async function getManifest (cfg, args, deadline) {
+  if (!cfg.manifest.bearerToken) throw new Error('manifest_not_configured')
+  const client = makeManifestClient(cfg.manifest, deadline)
+  return client.getManifest(args)
+}
+
+async function updateManifest (cfg, args, deadline) {
+  if (!cfg.manifest.bearerToken) throw new Error('manifest_not_configured')
+  const client = makeManifestClient(cfg.manifest, deadline)
+  return client.updateManifest(args)
+}
+
+module.exports = { buildConfig, getTrace, getManifest, updateManifest, publicError, makeDeadline, TOTAL_BUDGET_MS }
