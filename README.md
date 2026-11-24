@@ -15,49 +15,135 @@ By default the UI will be served locally but actions will be deployed and served
 
 For more information on the difference between `aio app run` and `aio app dev`, see [here](https://developer.adobe.com/app-builder/docs/guides/development/#aio-app-dev-vs-aio-app-run)
 
-## MCP Manifest Tools
+## MCP Tools
 
-The MCP action exposes `get_manifest` and `update_manifest` alongside `get_trace`. Set
-`MANIFEST_BEARER_TOKEN` in `.env` to the compiler service token (without the
-`Bearer ` prefix). The caller authenticates to MCP with `MCP_API_KEY`, not this
-upstream token.
+The MCP action exposes `get_trace`, `investigate`, `get_manifest`, and
+`update_manifest`. Callers authenticate with `MCP_API_KEY`.
 
-Example `tools/call` parameters:
+### Investigate
 
-```json
-{
-  "name": "get_manifest",
-  "arguments": {
-    "manifest_id": "761df9f0-0348-450b-9631-7ba04cd103be",
-    "sandbox_id": "85b4fed7-fc50-4989-b4fe-d7fc50e98906",
-    "org_id": "B4A122FD69126FF30A495FB9@AdobeOrg"
-  }
-}
-```
+`investigate` diagnoses a failed Brand Concierge interaction and returns
+`request_id`, `user_question`, `actual_response`, `diagnosis`, and `remediation`
+as JSON. It reuses the complete LangSmith trace retrieval implementation, not
+the truncated summaries or only the first raw output part of `get_trace`.
 
-The tool returns the complete JSON from `/v1/manifests/{manifest_id}/versions/default`.
-
-`update_manifest` calls `GET /v1/manifests/{manifest_id}/compile-request` with
-`x-api-key: aep_copilot_engine` and the same server-held bearer token. It may
-change server state and does not accept replacement manifest JSON. Example
-`tools/call` parameters:
+Inputs:
 
 ```json
 {
-  "name": "update_manifest",
-  "arguments": {
-    "manifest_id": "a1329fa5-f6b8-4270-8046-f77352751951",
-    "sandbox_id": "cd5df39e-86e0-47c8-9df3-9e86e077c829",
-    "org_id": "708E423B67F3C2050A495C27@AdobeOrg"
-  }
+  "request_id": "761df9f0-0348-450b-9631-7ba04cd103be",
+  "context_ai_response": [
+    {
+      "text": "Retrieved travel information...",
+      "score": 0.8,
+      "metadata": { "title": "Travel" }
+    }
+  ]
 }
 ```
 
-The compile response JSON is returned in full; an empty successful response
-returns `{ "status": <HTTP status> }`. Redirects are refused for both tools.
+`request_id` is required. `context_ai_response` is an optional array of retrieval
+text, scores, and metadata supplied by the MCP client; omit it if search was
+blocked. This input spelling is intentional. Client retrieval evidence is
+identified by `run_id: "client:context_ai_response"` and cannot prove a tool ran.
+Field paths containing `#json` address decoded fields inside a JSON-string
+source field.
 
-The compiler host is internal; the local machine or deployed Runtime action must
-have network access to it. Restart `aio app dev` after changing `.env` or action inputs.
+The authoritative `manifest_schema.json` in the project root is bundled on the
+server. Callers do not supply a schema. Its type placeholders never establish
+runtime configuration values.
+
+Configure the MCP action's deployment inputs:
+
+- `LANGSMITH_API_KEY`: existing trace access key.
+- `AWS_BEARER_TOKEN_BEDROCK`: Bedrock API key; populate through the deployment
+  environment, never commit the value.
+- `BEDROCK_REGION`: `us-east-2`.
+- `BEDROCK_ENDPOINT`: `https://bedrock-runtime.us-east-2.amazonaws.com`.
+- `BEDROCK_MODEL_ID`: `us.openai.gpt-6.1-sol` inference profile.
+
+Analysis uses Bedrock Converse with bearer authentication. Its endpoint and
+inference profile are restricted to these approved values. Sensitive headers
+and credential fields are excluded; recognizable sensitive content prevents
+external model analysis. Do not supply confidential or personal trace content
+for external analysis. Diagnostic evidence is bounded, never silently cut to
+fit a request. Provider errors and invalid model JSON are explicit MCP errors.
+
+Routing:
+
+- `COMPOSER_FIX`: guardrails, instructions, suggestions, and brand style.
+- `SUPPORT_TICKET`: retrieval character/chunk/result limits, hybrid search,
+  boosts, indexing, ranking, and tool failures.
+- `NEEDS_INVESTIGATION`: no supported actionable remediation, an incomplete
+  trace that cannot establish the failure stage, or a legitimate safety block
+  requiring no configuration change.
+
+A `GuardrailVerdict` call with `{"decision":"BLOCKED"}` and no Content AI
+execution recommends reviewing `controls.guardrails.prompt`. Missing brand
+scope does not prevent this review; `INCORRECT_GUARDRAIL_BLOCK` requires evidence
+of a conflicting effective rule and independent brand scope. Legitimate safety
+restrictions are preserved. Absent search without a verdict can warrant a
+LOW-confidence guardrail review, explicitly labeled as a hypothesis.
+
+Successful search with abruptly ending retrieved text and a broader user
+question can recommend reviewing `max_text_chars` without assuming a limit.
+When an actual runtime character budget exists, 95% proximity strengthens the
+diagnosis. Chunk changes require separate supporting chunk evidence.
+Question citations may reference the root `inputs.user_message` or a matching
+user-role message at `inputs.messages[i].content[j].text` (or string content).
+Assistant, system, tool, and unrelated historical messages cannot establish the
+user question. JSON-encoded search results retain evidence paths such as
+`outputs.result#json[0].data.text`. Once truncation is established, Support
+review of `max_text_chars` takes priority over an inconclusive or Composer route;
+unknown runtime limits are never invented.
+
+Only the applicable recommendation field (`composer_change` or
+`support_ticket`) is populated. The tool never changes configuration or
+submits tickets. Redeploy the action to publish the new tool.
+
+`remediation.review_attributes` identifies the manifest configuration path to
+review, or is `null` for backend issues without an applicable manifest field.
+It replaces the previous `manifest_path` output field; its value remains a
+single string or `null`.
+
+### Request parsing diagnostics
+
+The MCP action logs `mcp_request_received`, followed by `mcp_request_parsed`
+or `mcp_parse_error`. Parsing diagnostics include a correlation ID, body type
+and length, inferred encoding, decoded shape and length, and a numeric JSON
+error position when available. They never include request bodies,
+authorization headers, or raw parser exception messages.
+
+A JSON-RPC parse-error response includes `error.data.diagnostic_id`; match
+that ID to the server log entry. During `aio app dev`, logs appear in the
+terminal running the dev server. An empty body and a base64-decoded empty
+body are distinguished from malformed nonempty JSON.
+
+### Manifest tools
+
+`get_manifest` fetches the default manifest version. `update_manifest` restores
+the existing compile-request operation; it does not accept arbitrary manifest
+edits or patches. Compilation can change state and should only be requested
+explicitly.
+
+Both tools take the following arguments:
+
+```json
+{
+  "manifest_id": "761df9f0-0348-450b-9631-7ba04cd103be",
+  "sandbox_id": "85b4fed7-fc50-4989-b4fe-d7fc50e98906",
+  "org_id": "B4A122FD69126FF30A495FB9@AdobeOrg"
+}
+```
+
+Configure `MANIFEST_BEARER_TOKEN` in the deployment environment, never in tool
+arguments or source control. The token is checked only when a manifest tool
+is called. Missing credentials or manifest-service failures do not prevent
+`get_trace` or `investigate` from running; neither invokes the manifest tools.
+Their existing handlers and implementations are unchanged.
+
+Redeploy the action and refresh the MCP client's tool list to expose the
+restored manifest tools on a deployed server.
 
 ## Test & Coverage
 

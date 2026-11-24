@@ -32,6 +32,10 @@ application:
             inputs:
               MCP_API_KEY: $MCP_API_KEY
               LANGSMITH_API_KEY: $LANGSMITH_API_KEY
+              AWS_BEARER_TOKEN_BEDROCK: $AWS_BEARER_TOKEN_BEDROCK
+              BEDROCK_REGION: us-east-2
+              BEDROCK_ENDPOINT: https://bedrock-runtime.us-east-2.amazonaws.com
+              BEDROCK_MODEL_ID: us.openai.gpt-6.1-sol
               MANIFEST_BEARER_TOKEN: $MANIFEST_BEARER_TOKEN
             annotations:
               require-adobe-auth: false

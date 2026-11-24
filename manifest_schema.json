@@ -1,0 +1,531 @@
+{
+  "metadata": {
+    "tenant": {
+      "ims_org_id": "string",
+      "sandbox_id": "string",
+      "sandbox_name": "string"
+    },
+    "manifest": {
+      "id": "string",
+      "revision": "integer",
+      "created_at": "string",
+      "updated_at": "string"
+    },
+    "schema_version": "string"
+  },
+  "instructions": [
+    "string",
+    "string"
+  ],
+  "mcp_servers": [
+    {
+      "id": "string",
+      "url": "string",
+      "headers": {
+        "X-Environment-Id": "string",
+        "X-Website-Code": "string",
+        "X-Store-Code": "string",
+        "X-Store-View-Code": "string",
+        "X-Api-Key": "string"
+      },
+      "connect_timeout": "number",
+      "stream_timeout": "number"
+    }
+  ],
+  "model_profiles": [
+    {
+      "id": "string",
+      "model": "string",
+      "default": "boolean",
+      "config": {
+        "temperature": "number",
+        "top_p": "number",
+        "seed": "integer",
+        "presence_penalty": "number",
+        "frequency_penalty": "number",
+        "parallel_tool_calls": "boolean"
+      }
+    },
+    {
+      "id": "string",
+      "model": "string",
+      "default": "boolean",
+      "config": {
+        "temperature": "number",
+        "top_p": "number",
+        "seed": "integer",
+        "presence_penalty": "number",
+        "frequency_penalty": "number",
+        "parallel_tool_calls": "boolean"
+      }
+    }
+  ],
+  "controls": {
+    "tool_use": {
+      "default_tool_refs": [
+        "string",
+        "string"
+      ],
+      "max_tool_calls": "integer"
+    },
+    "guardrails": {
+      "prompt": "string",
+      "model_profile": "string"
+    },
+    "question_index": {
+      "collection_id": "string",
+      "similarity_threshold": "number"
+    },
+    "deterministic_routes": [
+      {
+        "id": "string",
+        "use_when": "string",
+        "result": {
+          "kind": "string",
+          "content": "string"
+        },
+        "postflight": "boolean",
+        "reason": "string"
+      },
+      {
+        "id": "string",
+        "use_when": "string",
+        "result": {
+          "kind": "string",
+          "content": "string"
+        },
+        "postflight": "boolean",
+        "reason": "string"
+      },
+      {
+        "id": "string",
+        "use_when": "string",
+        "result": {
+          "kind": "string",
+          "content": "string"
+        },
+        "postflight": "boolean",
+        "reason": "string"
+      },
+      {
+        "id": "string",
+        "use_when": "string",
+        "result": {
+          "kind": "string",
+          "content": "string"
+        },
+        "postflight": "boolean",
+        "reason": "string"
+      },
+      {
+        "id": "string",
+        "use_when": "string",
+        "result": {
+          "kind": "string",
+          "content": "string"
+        },
+        "postflight": "boolean",
+        "reason": "string"
+      },
+      {
+        "id": "string",
+        "use_when": "string",
+        "result": {
+          "kind": "string",
+          "content": "string"
+        },
+        "postflight": "boolean",
+        "reason": "string"
+      }
+    ],
+    "response": {
+      "attribution": {
+        "groundedness_score_threshold": "number",
+        "match_threshold": "number",
+        "exclude_edge_sentences": "boolean"
+      },
+      "suggestions": {
+        "prompt": "string",
+        "model_profile": "string"
+      }
+    },
+    "errors": {
+      "GUARDRAIL_BLOCKED": "string",
+      "TOOL_NOT_ALLOWED": "string",
+      "MAX_TOOL_ROUNDS": "string",
+      "AGENT_ERROR": "string",
+      "HISTORY_LOAD_ERROR": "string",
+      "TOOL_FAILURE": "string",
+      "USER_MESSAGE_TOO_LONG": "string"
+    },
+    "dataworkflow_ids": [
+      "string"
+    ]
+  },
+  "brand": {
+    "style_rules": [
+      "string",
+      "string",
+      "string",
+      "string",
+      "string",
+      "string",
+      "string"
+    ]
+  },
+  "tools": [
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "string"
+          }
+        },
+        "required": [
+          "string"
+        ]
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "category": "string",
+      "config": {
+        "bucket": "string",
+        "index_name": "string",
+        "result_limit": "integer",
+        "indexes_details": {
+          "configuration": {
+            "vector_spaces": [
+              {
+                "name": "string",
+                "boost": "number"
+              }
+            ],
+            "lexical_spaces": [
+              {
+                "name": "string",
+                "boost": "string"
+              }
+            ]
+          },
+          "mappings": {
+            "id": [
+              "string"
+            ],
+            "url": [
+              "string",
+              "string",
+              "string",
+              "string"
+            ],
+            "title": [
+              "string",
+              "string",
+              "string"
+            ],
+            "content": [
+              "string",
+              "string",
+              "string"
+            ],
+            "image": [
+              "string",
+              "string"
+            ]
+          }
+        },
+        "result_key": "string",
+        "max_text_chars": "integer",
+        "max_chunks": "integer"
+      }
+    },
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "string"
+          }
+        },
+        "required": [
+          "string"
+        ]
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "hooks": {
+        "pre": [],
+        "post": [
+          {
+            "type": "string",
+            "config": {
+              "writes": [
+                {
+                  "target": "string",
+                  "expression": "string",
+                  "mode": "string"
+                }
+              ],
+              "on_error": "string"
+            }
+          }
+        ]
+      },
+      "config": {
+        "agent_id": "string",
+        "endpoint": "string",
+        "protocol": "string",
+        "timeout_seconds": "number",
+        "rpc_method": "string",
+        "output_modes": [
+          "string",
+          "string"
+        ],
+        "context": {
+          "ims_identity": "boolean",
+          "application_context": "boolean"
+        },
+        "request": {
+          "metadata": {
+            "chatId": {
+              "expression": "string"
+            },
+            "interactionId": {
+              "expression": "string"
+            },
+            "applicationName": "string",
+            "agentId": {
+              "expression": "string"
+            }
+          }
+        }
+      }
+    },
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {},
+        "required": []
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "hooks": {
+        "pre": [],
+        "post": [
+          {
+            "type": "string",
+            "config": {
+              "writes": [
+                {
+                  "target": "string",
+                  "expression": "string",
+                  "mode": "string"
+                }
+              ],
+              "on_error": "string"
+            }
+          },
+          {
+            "type": "string",
+            "config": {
+              "expression": "string",
+              "on_error": "string"
+            }
+          }
+        ]
+      },
+      "config": {
+        "server": "string",
+        "mcp_tool_name": "string"
+      }
+    },
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {},
+        "required": []
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "hooks": {
+        "pre": [],
+        "post": [
+          {
+            "type": "string",
+            "config": {
+              "writes": [
+                {
+                  "target": "string",
+                  "expression": "string",
+                  "mode": "string"
+                }
+              ],
+              "on_error": "string"
+            }
+          },
+          {
+            "type": "string",
+            "config": {
+              "expression": "string",
+              "on_error": "string"
+            }
+          }
+        ]
+      },
+      "config": {
+        "server": "string",
+        "mcp_tool_name": "string"
+      }
+    },
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {},
+        "required": []
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "hooks": {
+        "pre": [],
+        "post": [
+          {
+            "type": "string",
+            "config": {
+              "expression": "string",
+              "on_error": "string"
+            }
+          }
+        ]
+      },
+      "config": {
+        "server": "string",
+        "mcp_tool_name": "string"
+      }
+    },
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {},
+        "required": []
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "hooks": {
+        "pre": [],
+        "post": [
+          {
+            "type": "string",
+            "config": {
+              "expression": "string",
+              "on_error": "string"
+            }
+          }
+        ]
+      },
+      "config": {
+        "server": "string",
+        "mcp_tool_name": "string"
+      }
+    },
+    {
+      "kind": "string",
+      "id": "string",
+      "description": "string",
+      "parameters": {
+        "type": "string",
+        "properties": {},
+        "required": []
+      },
+      "result": {
+        "content_type": "string",
+        "description": "string"
+      },
+      "hooks": {
+        "pre": [],
+        "post": [
+          {
+            "type": "string",
+            "config": {
+              "writes": [
+                {
+                  "target": "string",
+                  "expression": "string",
+                  "mode": "string"
+                }
+              ],
+              "on_error": "string"
+            }
+          },
+          {
+            "type": "string",
+            "config": {
+              "expression": "string",
+              "on_error": "string"
+            }
+          }
+        ]
+      },
+      "config": {
+        "server": "string",
+        "mcp_tool_name": "string"
+      }
+    }
+  ],
+  "skills": [
+    {
+      "id": "string",
+      "description": "string",
+      "instructions": "string",
+      "tool_refs": [
+        "string"
+      ],
+      "use_when": [
+        "string",
+        "string",
+        "string",
+        "string",
+        "string",
+        "string",
+        "string",
+        "string"
+      ],
+      "avoid_when": [],
+      "adjacent_skills": [],
+      "defer_loading": "boolean",
+      "rendered_instructions": "string",
+      "rendered_description": "string"
+    }
+  ]
+}

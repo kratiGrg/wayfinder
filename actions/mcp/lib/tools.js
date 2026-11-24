@@ -3,6 +3,7 @@ const { makeClient } = require('./langsmith')
 const { makeClient: makeManifestClient } = require('./manifests')
 const { condenseTrace } = require('./trace')
 const { makeDeadline } = require('./http')
+const { investigate } = require('./investigate')
 
 // LangSmith tracing project (bcos-prod). An identifier, not a secret, so a code default is fine.
 // LANGSMITH_PROJECT_ID, if set, overrides it.
@@ -28,6 +29,12 @@ function buildConfig (p, inbound = {}) {
       workspaceId: p.LANGSMITH_WORKSPACE_ID,
       endpoint: p.LANGSMITH_ENDPOINT || 'https://api.smith.langchain.com'
     },
+    bedrock: {
+      apiKey: p.AWS_BEARER_TOKEN_BEDROCK,
+      endpoint: p.BEDROCK_ENDPOINT || 'https://bedrock-runtime.us-east-2.amazonaws.com',
+      region: p.BEDROCK_REGION || 'us-east-2',
+      modelId: p.BEDROCK_MODEL_ID || 'us.openai.gpt-6.1-sol'
+    },
     manifest: { bearerToken: p.MANIFEST_BEARER_TOKEN },
     rawPartChars: Math.min(400000, Math.max(20000, parseInt(p.RAW_PART_CHARS, 10) || DEFAULT_RAW_PART_CHARS))
   }
@@ -41,11 +48,24 @@ const PUBLIC_ERRORS = {
   manifest_not_configured: 'Manifest service is not configured on the server (MANIFEST_BEARER_TOKEN missing).',
   invalid_manifest_response: 'Manifest service returned invalid JSON.',
   response_too_large: 'The upstream response exceeded the size limit.',
+  invalid_diagnostic_input: 'investigate requires a UUID request_id and an optional context_ai_response retrieval array.',
+  invalid_diagnostic_data: 'The diagnostic evidence has an unsupported structure.',
+  diagnostic_evidence_too_large: 'The diagnostic evidence exceeds the analysis size limit; no evidence was silently truncated.',
+  diagnostic_data_not_shareable: 'The diagnostic evidence contains sensitive data and cannot be sent for model analysis.',
+  bedrock_not_configured: 'Bedrock is not configured on the server (AWS_BEARER_TOKEN_BEDROCK missing).',
+  invalid_bedrock_config: 'Bedrock configuration must use the approved us-east-2 endpoint and inference profile.',
+  invalid_bedrock_response: 'Bedrock returned an incomplete or invalid JSON response.',
+  invalid_diagnosis_response: 'The model diagnosis does not match the required output structure.',
+  invalid_diagnosis_evidence: 'The model diagnosis cites evidence not present in the source data.',
+  invalid_diagnosis_path: 'The model diagnosis refers to an unsupported manifest schema path.',
   timeout: 'An upstream call timed out.'
 }
 function publicError (e) {
   const code = e && e.message
   if (PUBLIC_ERRORS[code]) return PUBLIC_ERRORS[code]
+  if (/^bedrock_http_(401|403)$/.test(code)) return 'Bedrock rejected the configured API key or model permissions.'
+  if (code === 'bedrock_http_429') return 'Bedrock rate limit reached. Retry shortly.'
+  if (/^bedrock_http_\d+$/.test(code)) return 'Bedrock returned an upstream error.'
   if (/^manifest_http_\d+$/.test(code)) return 'Manifest service returned an error (' + code.replace('manifest_http_', 'HTTP ') + ').'
   if (/^langsmith_http_(401|403)$/.test(code)) return 'LangSmith rejected the API key or workspace (' + code.replace('langsmith_http_', 'HTTP ') + ').'
   if (code === 'langsmith_http_429') return 'LangSmith rate limit reached. Retry shortly.'
@@ -106,4 +126,4 @@ async function updateManifest (cfg, args, deadline) {
   return client.updateManifest(args)
 }
 
-module.exports = { buildConfig, getTrace, getManifest, updateManifest, publicError, makeDeadline, TOTAL_BUDGET_MS }
+module.exports = { buildConfig, getTrace, getManifest, updateManifest, investigate, publicError, makeDeadline, TOTAL_BUDGET_MS }
